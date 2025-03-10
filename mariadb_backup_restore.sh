@@ -27,7 +27,6 @@ if [ "$(id -u)" -ne 0 ]; then
     echo "此脚本需要root权限运行，请使用sudo或以root身份运行"
     exit 1
 fi
-
 # 确保备份目录存在
 ensure_backup_dir() {
     if [ ! -d "$BACKUP_DIR" ]; then
@@ -178,6 +177,32 @@ list_backups() {
     fi
 }
 
+# 列出所有数据库
+list_databases() {
+    echo "可用的数据库列表:"
+    
+    # 构建mysql命令
+    local mysql_cmd="mysql"
+    if [ -n "$DB_USER" ]; then
+        mysql_cmd="$mysql_cmd -u $DB_USER"
+    fi
+    
+    if [ -n "$DB_PASSWORD" ]; then
+        mysql_cmd="$mysql_cmd -p$DB_PASSWORD"
+    fi
+    
+    # 执行查询并格式化输出
+    if $mysql_cmd -e "SHOW DATABASES;" 2>/dev/null; then
+        log_message "数据库列表查询成功"
+    else
+        log_message "错误: 无法获取数据库列表"
+        echo "错误: 无法获取数据库列表，请检查数据库连接"
+        return 1
+    fi
+    
+    return 0
+}
+
 # 清理旧备份文件
 cleanup_old_backups() {
     local days="$1"
@@ -202,6 +227,7 @@ show_help() {
     echo "  $0 backup [数据库名]     # 备份指定数据库，不指定则备份所有数据库"
     echo "  $0 restore 备份文件 [数据库名]  # 还原备份文件到指定数据库"
     echo "  $0 list                  # 列出可用的备份文件"
+    echo "  $0 listdb                # 列出所有可用的数据库"
     echo "  $0 cleanup [天数]        # 清理指定天数之前的备份文件，默认30天"
     echo "  $0 help                  # 显示此帮助信息"
 }
@@ -235,6 +261,9 @@ main() {
             ;;
         list)
             list_backups
+            ;;
+        listdb)
+            list_databases
             ;;
         cleanup)
             local days="$1"
