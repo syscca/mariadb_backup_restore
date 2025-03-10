@@ -26,7 +26,7 @@ log_message() {
 if [ "$(id -u)" -ne 0 ]; then
     echo "此脚本需要root权限运行，请使用sudo或以root身份运行"
     exit 1
-}
+fi
 
 # 确保备份目录存在
 ensure_backup_dir() {
